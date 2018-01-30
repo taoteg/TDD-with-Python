@@ -1,7 +1,20 @@
+import unittest
 from selenium import webdriver
 
-# browser = webdriver.Firefox()     # Firefox throws selenium errors.
-browser = webdriver.Chrome()
+class HomePageTest(unittest.TestCase):
+    """Testing Home Page"""
 
-browser.get('http://localhost:8000')
-assert 'Django' in browser.title
+    def setUp(self):
+        self.browser = webdriver.Chrome()
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def test_home_page(self):
+        self.browser.get('http://localhost:8000')
+        # Test for default Django landing pge.
+        self.assertIn('To-Do', self.browser.title)
+
+
+if __name__ == '__main__':
+    unittest.main()
