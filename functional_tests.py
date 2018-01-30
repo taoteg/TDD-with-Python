@@ -11,10 +11,29 @@ class HomePageTest(unittest.TestCase):
         self.browser.quit()
 
     def test_home_page(self):
+        # The user opens their browser to the superlists URL.
         self.browser.get('http://localhost:8000')
-        # Test for default Django landing pge.
+
+        # The user should see 'To-Do' in the page title and header.
         self.assertIn('To-Do', self.browser.title)
+
+        # Intentionally failing the test.
+        # self.fail('Finish writing the test!')
+
+        # The user is invited to enter an item into the todo list.
+        # TestCase
+
+        # The user types in their todo, presses enter, and the site refreshes.
+        # The user should now see their todo in the list.
+        # TestCase
+
+        # The user clicks on the 'add another' option and enters another todo.
+        # The user refreshes the page and should now see their new todo in the list.
+        # TestCase
+
+        # Etc.
 
 
 if __name__ == '__main__':
-    unittest.main()
+    # unittest.main()
+    unittest.main(warnings='ignore')
