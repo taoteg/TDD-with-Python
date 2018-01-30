@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.http import HttpRequest
+from django.template.loader import render_to_string
 
 # Import a reference to the views.
 from lists.views import home_page
@@ -13,14 +14,8 @@ class HomePageViewTest(TestCase):
         request = HttpRequest()
         response = home_page(request)
 
-        # Decode the byte data as utf-8.
-        html = response.content.decode('utf8')
+        # Read in the template file.
+        expected_content = render_to_string('home.html')
 
-        # Verify content starts with proper html tag.
-        self.assertTrue(html.startswith('<html>'))
-
-        # Verify content title contains `To-Do Lists`.
-        self.assertIn('<title>To-Do Lists</title>', html)
-
-        # Verify content ends with proper html tag.
-        self.assertTrue(html.endswith('</html>'))
+        # Compare the template content with the response content.
+        self.assertEqual(response.content.decode('utf8'), expected_content)

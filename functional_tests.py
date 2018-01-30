@@ -17,8 +17,23 @@ class HomePageTest(unittest.TestCase):
         # The user should see 'To-Do' in the page title and header.
         self.assertIn('To-Do', self.browser.title)
 
-        # Intentionally failing the test.
-        # self.fail('Finish writing the test!')
+        # Find elements by tag name.
+        # Selenium has a find_element AND a find_elements.
+        # The former will fail if no match, the latter willl return an empty list.
+        header = self.browser.find_element_by_tag_name('h1')
+        self.assertIn('To-Do', header.text)
+
+        # Find and interact with an element by ID.
+        inputbox = self.browser.find_element_by_id('id_new_item')
+        # The user should see placeholder text in the input field.
+        self.assertEqual(
+            inputbox.get_attribute('placeholder'),
+            'Enter a to-do item'
+        )
+        # Test using the input field.
+        # Note: this simulates a user typing into the field, so client-soide JS will react as it would in production.
+        inputbox.send_keys('Buy peacock feathers')
+        inputbox.send_keys('\n')
 
         # The user is invited to enter an item into the todo list.
         # TestCase
@@ -33,6 +48,8 @@ class HomePageTest(unittest.TestCase):
 
         # Etc.
 
+        # Intentionally failing the test.
+        self.fail('Finish writing the test!')
 
 if __name__ == '__main__':
     # unittest.main()
