@@ -1199,3 +1199,78 @@ Now if we want to edit home.html we can, because this is a constant from the uni
 ```
 
 Our unit tests should still pass and now we should also be able to pass another of our fuctional tests (finding the h1 element).
+
+Let's wrap up our functional tests now by editing our html file to include the inout element.
+
+```
+# lists/templates/home.html
+
+<html>
+<head>
+  <title>To-Do Lists</title>
+</head>
+<body>
+  <h1>To-Do Lists Is Coming!</h1>
+  <input id="id_new_item" />
+</body>
+</html>
+```
+
+When you run the funcitonal test you will see it failing with the error:
+
+```
+> python functional_tests.py
+F
+======================================================================
+FAIL: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 31, in test_home_page
+    'Enter a to-do item'
+AssertionError: '' != 'Enter a to-do item'
++ Enter a to-do item
+
+----------------------------------------------------------------------
+Ran 1 test in 1.812s
+
+FAILED (failures=1)
+```
+
+Oops! No placeholder text! Let's fix that....
+
+```
+# lists/templates/home.html
+
+<html>
+<head>
+  <title>To-Do Lists</title>
+</head>
+<body>
+  <h1>To-Do Lists Is Coming!</h1>
+  <input id="id_new_item" placeholder="Enter a to-do item" />
+</body>
+</html>
+```
+
+And if we run our functiyonal tests again we are finally back at our self imposed failure:
+
+```
+> python functional_tests.py
+F
+======================================================================
+FAIL: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 52, in test_home_page
+    self.fail('Finish writing the test!')
+AssertionError: Finish writing the test!
+
+----------------------------------------------------------------------
+Ran 1 test in 1.869s
+
+FAILED (failures=1)
+```
+
+This is as far as we can get without starting to include responses from servers, databases, etc. Our user can type input into the field (our test even passes) but we aren't doing anything with that yet.
+
+Let's move onward...

@@ -49,7 +49,7 @@ class HomePageTest(unittest.TestCase):
         # Etc.
 
         # Intentionally failing the test.
-        self.fail('Finish writing the test!')
+        self.fail('Finish writing the test! Resume video at 1:55:00')
 
 if __name__ == '__main__':
     # unittest.main()
