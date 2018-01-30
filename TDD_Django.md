@@ -5,6 +5,8 @@ Based on these works by Harry Percival:
 - [video](https://www.youtube.com/watch?v=vQjmz9wCjLA)
 - [docs](https://www.obeythetestinggoat.com/pages/book.html#toc)
 
+This covers Part 1: The Basics of TDD and Django
+
 
 #### Requirements:
 
