@@ -4,10 +4,13 @@
 Based on these works by Harry Percival:
 - [TDD PyCon 2015 video](https://www.youtube.com/watch?v=vQjmz9wCjLA)
 - [Test Driven Development with Python (by Harry Percival)](https://www.obeythetestinggoat.com/pages/book.html#toc)
+
+Also see:
 - [TDD by Example (by Kent Beck)](https://www.eecs.yorku.ca/course_archive/2003-04/W/3311/sectionM/case_studies/money/KentBeck_TDD_byexample.pdf)
 - [Working Effectively with Legacy Code (by Michael Feathers)](https://www.amazon.com/Working-Effectively-Legacy-Michael-Feathers/dp/0131177052)
 
 This tutorial covers Part 1: The Basics of TDD and Django (Chapters 1 - 5ish)
+
 
 #### Requirements:
 
