@@ -1998,3 +1998,9 @@ FAILED (failures=1)
 SUCCESS! (of a kind). We are now passing the test for the list content and back to our self imposed test failure to remind us to keep testing.
 
 However, there is still a problem. A list is generally not a list without more than one item and if we were to write a second test that submitted a new POST value, we would see that the first POST value will have been removed and replaced by the new value instead of being appended to the list. This is becuse our list only handles one item currently. Now we want to extend it to hanlde n-items.
+
+## TODO
+
+- Extend list to support n-items
+- Extend application to support per user lists
+- Deploy application live to web
