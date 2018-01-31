@@ -1276,3 +1276,251 @@ FAILED (failures=1)
 This is as far as we can get without starting to include responses from servers, databases, etc. Our user can type input into the field (our test even passes) but we aren't doing anything with that yet.
 
 Let's move onward...
+
+### Populating the Lists
+
+The next test we want to run is verifying user input to the list table. We will need to get a reference to the table (by id), grab each row in the table, and inspect its content. Let's add the logic to our functional tests for this.
+
+```
+# functional_tests.py
+
+import unittest
+from selenium import webdriver
+
+class HomePageTest(unittest.TestCase):
+    """Testing Home Page"""
+
+    def setUp(self):
+        self.browser = webdriver.Chrome()
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def test_home_page(self):
+        # The user opens their browser to the superlists URL.
+        self.browser.get('http://localhost:8000')
+
+        # The user should see 'To-Do' in the page title and header.
+        self.assertIn('To-Do', self.browser.title)
+
+        # Find elements by tag name.
+        # Selenium has a find_element AND a find_elements.
+        # The former will fail if no match, the latter willl return an empty list.
+        header = self.browser.find_element_by_tag_name('h1')
+        self.assertIn('To-Do', header.text)
+
+        # Find and interact with an element by ID.
+        inputbox = self.browser.find_element_by_id('id_new_item')
+        # The user should see placeholder text in the input field.
+        self.assertEqual(
+            inputbox.get_attribute('placeholder'),
+            'Enter a to-do item'
+        )
+        # Test using the input field.
+        # Note: this simulates a user typing into the field, so client-soide JS will react as it would in production.
+        inputbox.send_keys('Buy peacock feathers')
+        inputbox.send_keys('\n')
+
+        # The user is invited to enter an item into the todo list.
+        # TestCase
+
+        # The user types in their todo, presses enter, and the site refreshes.
+        # The user should now see their todo in the list:
+        # "1: Buy peacock feathers"
+        table = self.browser.find_element_by_id('id_list_table')
+        rows = table.find_elements_by_tag_name('tr')
+
+        # NOTE: any (boolean func) + list comprehension generator expression.
+        self.assertTrue(
+            any(row.text == '1: Buy peacock feathers' for row in rows)
+        )
+
+        # The user clicks on the 'add another' option and enters another todo.
+        # The user refreshes the page and should now see their new todo in the list.
+        # TestCase
+
+        # Etc.
+
+        # Intentionally failing the test.
+        self.fail('Finish writing the test! 1:55:00...')
+
+if __name__ == '__main__':
+    # unittest.main()
+    unittest.main(warnings='ignore')
+```
+
+If we run our functional tests now, we will see this error:
+
+```
+> python functional_tests.py
+E
+======================================================================
+ERROR: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 44, in test_home_page
+    table = self.browser.find_element_by_id('id_list_table')
+  File "/Users/jgentle/.pyenv/versions/3.6.4rc1/envs/python-tdd/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py", line 351, in find_element_by_id
+    return self.find_element(by=By.ID, value=id_)
+  File "/Users/jgentle/.pyenv/versions/3.6.4rc1/envs/python-tdd/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py", line 955, in find_element
+    'value': value})['value']
+  File "/Users/jgentle/.pyenv/versions/3.6.4rc1/envs/python-tdd/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py", line 312, in execute
+    self.error_handler.check_response(response)
+  File "/Users/jgentle/.pyenv/versions/3.6.4rc1/envs/python-tdd/lib/python3.6/site-packages/selenium/webdriver/remote/errorhandler.py", line 237, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"id","selector":"id_list_table"}
+  (Session info: chrome=64.0.3282.119)
+  (Driver info: chromedriver=2.35.528157 (4429ca2590d6988c0745c24c8858745aaaec01ef),platform=Mac OS X 10.13.3 x86_64)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 1.901s
+
+FAILED (errors=1)
+```
+
+This error is telling us that there is no element with the id `id_list_table` in our template.
+
+Let's add some more details to our current `home.html` template in order to test our user interactions with the list table. Update your file to look like this:
+
+```
+<html>
+<head>
+  <title>To-Do Lists</title>
+</head>
+<body>
+  <h1>To-Do Lists Is Coming!</h1>
+  <input id="id_new_item" placeholder="Enter a to-do item" />
+  <table id="id_list_table">
+  </table>
+</body>
+</html>
+```
+
+Now if we run our test again we get a new error:
+
+```
+> python functional_tests.py
+F
+======================================================================
+FAIL: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 50, in test_home_page
+    any(row.text == '1: Buy peacock feathers' for row in rows)
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 1.914s
+
+FAILED (failures=1)
+```
+
+What is this tellng us? We see that we are failing to pass our test, but the error message is not very helpful is it? This has to do with how we wrote our test in the first place. Let's take a closer look at these specific lines of test code:
+
+```
+# functional_tests.py
+
+self.assertTrue(
+    any(row.text == '1: Buy peacock feathers' for row in rows)
+)
+```
+
+If we break this code down we see that we have two parts:
+- an `any` function that accepts an iterable (a list if things) and will return true if any of the things in the list are true (or truthy).
+- a `list comprehension` for generating a list from the content of all the rows.
+
+**An Aside on List Comprehensions in Python**
+
+If you wanted to do this in a long form, imagine you want to build up a list of things (in this case you have a table and you want to look at the text of each row). You would probably declare a `row_text` variable and initialize it to an empty list, then iterate over all the rows in the table adding their text content to the `row_text` variable one by one.
+
+Python provides a shortcut method for building up a list like this in a single line by using a list comprehension (ex. `row.text for row in rows`). This will give you a list object of row.text values. In our test code we are going further by adding a boolean check to the `row.text` value which causes the list comrpehension to produce a list of `true` and `false` values based on the boolean condition being evaluated (eg. `row.text == '1: Buy peacock feathers'`).
+
+What is wrong with this code? Technically nothing, however it is too clever for its own good (code smell warning!). In addition to being slightly difficult to reason about, it also obscures the reason for the test failure with an overly simplified error message (eg. `False is not true`). While we know there was an error, we know very little else about the cause of the error due to the test code obscuring the root cause.
+
+So let's refactor this test into something that will give us better error messaging as to the underlying cause for the test failing. Replace the `self.assertTrue` block with this code instead:
+
+```
+# Simpler logic with better error output.
+self.assertIn(
+    '1: Buy peacock feathers',
+    [row.text for row in rows]
+)
+```
+
+If we run our functional tests again we get a different error message:
+
+```
+> python functional_tests.py
+F
+======================================================================
+FAIL: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 57, in test_home_page
+    [row.text for row in rows]
+AssertionError: '1: Buy peacock feathers' not found in []
+
+----------------------------------------------------------------------
+Ran 1 test in 1.946s
+
+FAILED (failures=1)
+```
+
+Now we can more clearly see that the test failed because the text `1: Buy peacock feathers` was not found in the list of rows (which is an empty list `[]`).
+
+We still generated the list of rows, but we tested for the content of the row.text rather than simply returning a boolean value based on the presence of the condition we were testing. This is much easier to reason about with more specific error messaging.
+
+Now let's get the test to pass.
+
+Since the test is telling us that the row list is empty, we can infer that we have no rows in our table. Let's update our table in the `home.html` template to include a row:
+
+```
+# lists/templates/home.html
+
+<html>
+<head>
+  <title>To-Do Lists</title>
+  <style>
+    body {
+      background: #222;
+      color: #FFF;
+    }
+  </style>
+</head>
+<body>
+  <h1>To-Do Lists Is Coming!</h1>
+  <input id="id_new_item" placeholder="Enter a to-do item" />
+  <table id="id_list_table">
+    <tr>
+      <td>stuff</td>
+    </tr>
+  </table>
+</body>
+</html>
+```
+
+Now if we run our functional tests again we get this error:
+
+```
+> python functional_tests.py
+F
+======================================================================
+FAIL: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 57, in test_home_page
+    [row.text for row in rows]
+AssertionError: '1: Buy peacock feathers' not found in ['stuff']
+
+----------------------------------------------------------------------
+Ran 1 test in 1.936s
+
+FAILED (failures=1)
+```
+
+Progress!!
+
+We can now see that we are getting some row text in our list (eg. `['stuff']`) and the error clearly indicates that the text we are testing for does not exists in the rows.
+
+We are now getting as far as inputting text, submitting it and looking to see if that text is now in the list of results. However, when we attempt to submit our text, the server is unable to save the data because we have not yet built the form controls required to submit the user data nor setup the database to store the submitted user data. Let's do that now.

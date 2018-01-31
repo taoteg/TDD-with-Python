@@ -39,8 +39,23 @@ class HomePageTest(unittest.TestCase):
         # TestCase
 
         # The user types in their todo, presses enter, and the site refreshes.
-        # The user should now see their todo in the list.
-        # TestCase
+        # The user should now see their todo in the list:
+        # "1: Buy peacock feathers"
+        table = self.browser.find_element_by_id('id_list_table')
+        rows = table.find_elements_by_tag_name('tr')
+
+        """
+        # NOTE: any (boolean func) + list comprehension generator expression.
+        self.assertTrue(
+            any(row.text == '1: Buy peacock feathers' for row in rows)
+        )
+        """
+
+        # Simpler logic with better error output.
+        self.assertIn(
+            '1: Buy peacock feathers',
+            [row.text for row in rows]
+        )
 
         # The user clicks on the 'add another' option and enters another todo.
         # The user refreshes the page and should now see their new todo in the list.
@@ -49,7 +64,7 @@ class HomePageTest(unittest.TestCase):
         # Etc.
 
         # Intentionally failing the test.
-        self.fail('Finish writing the test! Resume video at 1:55:00')
+        self.fail('Finish writing the test! 2:21:46...')
 
 if __name__ == '__main__':
     # unittest.main()
