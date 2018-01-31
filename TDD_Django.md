@@ -11,6 +11,10 @@ Also see:
 - [TDD by Example (by Kent Beck)](https://www.eecs.yorku.ca/course_archive/2003-04/W/3311/sectionM/case_studies/money/KentBeck_TDD_byexample.pdf)
 - [Working Effectively with Legacy Code (by Michael Feathers)](https://www.amazon.com/Working-Effectively-Legacy-Michael-Feathers/dp/0131177052)
 
+Other References:
+- [Selenium](http://www.seleniumhq.org/docs/03_webdriver.jsp#selenium-webdriver-api-commands-and-operations)
+- [Python unittest](https://docs.python.org/3.6/library/unittest.html)
+
 
 #### Requirements:
 
