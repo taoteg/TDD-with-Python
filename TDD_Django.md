@@ -2,11 +2,12 @@
 
 
 Based on these works by Harry Percival:
-- [video](https://www.youtube.com/watch?v=vQjmz9wCjLA)
-- [docs](https://www.obeythetestinggoat.com/pages/book.html#toc)
+- [TDD PyCon 2015 video](https://www.youtube.com/watch?v=vQjmz9wCjLA)
+- [Test Driven Development with Python (by Harry Percival)](https://www.obeythetestinggoat.com/pages/book.html#toc)
+- [TDD by Example (by Kent Beck)](https://www.eecs.yorku.ca/course_archive/2003-04/W/3311/sectionM/case_studies/money/KentBeck_TDD_byexample.pdf)
+- [Working Effectively with Legacy Code (by Michael Feathers)](https://www.amazon.com/Working-Effectively-Legacy-Michael-Feathers/dp/0131177052)
 
-This covers Part 1: The Basics of TDD and Django
-
+This tutorial covers Part 1: The Basics of TDD and Django (Chapters 1 - 5ish)
 
 #### Requirements:
 
@@ -1524,3 +1525,473 @@ Progress!!
 We can now see that we are getting some row text in our list (eg. `['stuff']`) and the error clearly indicates that the text we are testing for does not exists in the rows.
 
 We are now getting as far as inputting text, submitting it and looking to see if that text is now in the list of results. However, when we attempt to submit our text, the server is unable to save the data because we have not yet built the form controls required to submit the user data nor setup the database to store the submitted user data. Let's do that now.
+
+## POST Requests and Forms
+
+First we add in a basic form element to wrap our user input field as follows:
+
+```
+# lists/templates/home.html
+
+<html>
+<head>
+  <title>To-Do Lists</title>
+</head>
+<body>
+  <h1>To-Do Lists Is Coming!</h1>
+  <form method="POST">
+    <input id="id_new_item" placeholder="Enter a to-do item" />
+  </form>
+  <table id="id_list_table">
+    <tr>
+      <td>stuff</td>
+    </tr>
+  </table>
+</body>
+</html>
+```
+
+If you open your browser to `http://localhost:8000` and try to input some text intp the input field you will get a CSRF verification error. Let's run the functional tests again and see what error they give us.
+
+```
+> python functional_tests.py
+E
+======================================================================
+ERROR: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 44, in test_home_page
+    table = self.browser.find_element_by_id('id_list_table')
+  File "/Users/jgentle/.pyenv/versions/3.6.4rc1/envs/python-tdd/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py", line 351, in find_element_by_id
+    return self.find_element(by=By.ID, value=id_)
+  File "/Users/jgentle/.pyenv/versions/3.6.4rc1/envs/python-tdd/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py", line 955, in find_element
+    'value': value})['value']
+  File "/Users/jgentle/.pyenv/versions/3.6.4rc1/envs/python-tdd/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py", line 312, in execute
+    self.error_handler.check_response(response)
+  File "/Users/jgentle/.pyenv/versions/3.6.4rc1/envs/python-tdd/lib/python3.6/site-packages/selenium/webdriver/remote/errorhandler.py", line 237, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.NoSuchElementException: Message: no such element: Unable to locate element: {"method":"id","selector":"id_list_table"}
+  (Session info: chrome=64.0.3282.119)
+  (Driver info: chromedriver=2.35.528157 (4429ca2590d6988c0745c24c8858745aaaec01ef),platform=Mac OS X 10.13.3 x86_64)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 1.948s
+
+FAILED (errors=1)
+```
+
+Suddenly the test can't even find the `id_list_table` anymore! We have made our test results even worse. This is an unexpected failure, so we can try several techniques to identify the cause:
+- Add a print statement in the test to debug
+- Manually interact with the webpage
+- Add a time.sleep into the test to pause it for a period long enbough to inspect the error.
+
+We will try using time.sleep approach. Edit you functional tests to match this:
+
+```
+import unittest
+import time
+from selenium import webdriver
+
+class HomePageTest(unittest.TestCase):
+    """Testing Home Page"""
+
+    def setUp(self):
+        self.browser = webdriver.Chrome()
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def test_home_page(self):
+        # The user opens their browser to the superlists URL.
+        self.browser.get('http://localhost:8000')
+
+        # The user should see 'To-Do' in the page title and header.
+        self.assertIn('To-Do', self.browser.title)
+
+        # Find elements by tag name.
+        # Selenium has a find_element AND a find_elements.
+        # The former will fail if no match, the latter willl return an empty list.
+        header = self.browser.find_element_by_tag_name('h1')
+        self.assertIn('To-Do', header.text)
+
+        # Find and interact with an element by ID.
+        inputbox = self.browser.find_element_by_id('id_new_item')
+        # The user should see placeholder text in the input field.
+        self.assertEqual(
+            inputbox.get_attribute('placeholder'),
+            'Enter a to-do item'
+        )
+        # Test using the input field.
+        # Note: this simulates a user typing into the field, so client-soide JS will react as it would in production.
+        inputbox.send_keys('Buy peacock feathers')
+        inputbox.send_keys('\n')
+
+        # The user is invited to enter an item into the todo list.
+        # TestCase
+
+        # The user types in their todo, presses enter, and the site refreshes.
+        # The user should now see their todo in the list:
+        # "1: Buy peacock feathers"
+
+        # We are unexpectedly failing here with our form element.
+        # Let's pause and inspect the browser during testing.
+        time.sleep(10)
+
+        table = self.browser.find_element_by_id('id_list_table')
+        rows = table.find_elements_by_tag_name('tr')
+
+        """
+        # NOTE: any (boolean func) + list comprehension generator expression.
+        self.assertTrue(
+            any(row.text == '1: Buy peacock feathers' for row in rows)
+        )
+        """
+
+        # Simpler logic with better error output.
+        self.assertIn(
+            '1: Buy peacock feathers',
+            [row.text for row in rows]
+        )
+
+        # The user clicks on the 'add another' option and enters another todo.
+        # The user refreshes the page and should now see their new todo in the list.
+        # TestCase
+
+        # Etc.
+
+        # Intentionally failing the test.
+        self.fail('Finish writing the test! 2:21:46...')
+
+if __name__ == '__main__':
+    # unittest.main()
+    unittest.main(warnings='ignore')
+```
+
+Now if we run our functional tests, the browser wil stay open for 10 seconds so that we can examine the error message. In this case it is identical to what we saw when manually visiting the site, the CRSF error.
+
+**An Aside on CSRF**
+
+A Cross-Site Request Forgery (CRSF) is an attack that can be used to subvert the security of a web application by POSTing form data to another web application as the user account of a valid user on our web application. In order to prevent these sort of injected attacks from working, we use token values that are dynamically generated by our web application, inserted into the web forms from our server, and must be returned with the POST data from the client in order to ensure that the form was indeed from our system and not some malicious third-party. This is a partial soluton to the general problem of unexpected inputs in web applications.
+
+Note: Read the book **Security Engineering** by Ross Anderson _(Cambridge University)_ for detailed exploration of this and many other aspects of security.
+
+Now back to the testing!
+
+We need to add a crsf token into our form, let's do it!
+
+```
+# lists/templates/home.html
+
+<html>
+<head>
+  <title>To-Do Lists</title>
+</head>
+<body>
+  <h1>To-Do Lists Is Coming!</h1>
+  <form method="POST">
+    <input id="id_new_item" placeholder="Enter a to-do item" />
+    {% csrf_token %}
+  </form>
+  <table id="id_list_table">
+    <tr>
+      <td>stuff</td>
+    </tr>
+  </table>
+</body>
+</html>
+```
+
+Now if we run our functional tests again...
+
+```
+> python functional_tests.py
+F
+======================================================================
+FAIL: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 63, in test_home_page
+    [row.text for row in rows]
+AssertionError: '1: Buy peacock feathers' not found in ['stuff']
+
+----------------------------------------------------------------------
+Ran 1 test in 11.988s
+
+FAILED (failures=1)
+```
+
+We see that there is no csrf error, although the server is still silently ignoring all user input data being POSTed. You can also manually test this on your localhost. Since the server still does not return a list item with the correct text content, our test is still failing.
+
+In order to test the server's ability to retain or store data, we will need to create a new test method in our unit tests. We will also update the name of our current unit test method `test_home_page_returns_correct_html` to instead be `test_home_page_uses_home_template`.
+
+```
+# lists/tests.py
+
+...
+class HomePageViewTest(TestCase):
+    """Testing HomePageView"""
+
+    def test_home_page_uses_home_template(self):
+        request = HttpRequest()
+        response = home_page(request)
+
+        # Read in the template file.
+        expected_content = render_to_string('home.html')
+
+        # Compare the template content with the response content.
+        self.assertEqual(response.content.decode('utf8'), expected_content)
+
+    def test_home_page_can_store_post_requests(self):
+        request = HttpRequest()
+        request.POST['item_text'] = 'new item'
+        response = home_page(request)
+        self.assertIn(
+            'new item',
+            response.content.decode('utf8')
+        )
+```
+
+We will also need to update our home.html template to include a name on the input field.
+
+```
+# lists/templates/home.html
+
+...
+<form method="POST">
+  <input id="id_new_item" name="item_text" placeholder="Enter a to-do item" />
+  {% csrf_token %}
+</form>
+...
+```
+
+When we run the unit tests, we will get this error now:
+
+```
+> python manage.py test lists
+Creating test database for alias 'default'...
+F.
+======================================================================
+FAIL: test_home_page_can_store_post_requests (lists.tests.HomePageViewTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/jgentle/Code/code_practices/python/TDD/django/superlists/lists/tests.py", line 29, in test_home_page_can_store_post_requests
+    response.content.decode('utf8')
+AssertionError: 'new item' not found in '<html>\n<head>\n  <title>To-Do Lists</title>\n  <style>\n    body {\n      background: #222;\n      color: #FFF;\n    }\n  </style>\n</head>\n<body>\n  <h1>To-Do Lists Is Coming!</h1>\n\n  <form method="POST">\n    <input id="id_new_item" name="item_text" placeholder="Enter a to-do item" />\n    \n  </form>\n\n  <table id="id_list_table">\n    <tr>\n      <td>stuff</td>\n    </tr>\n  </table>\n</body>\n</html>\n'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.006s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+```
+
+We are seeing that the text string is not found in the html response. This indicates that the server is not storing the values being submitted via the form POST. We will need to first update our view function to distinguish between `POST` and `GET` requests from the client. Let's refactor our view function as follows:
+
+```
+# lists/views.py
+
+...
+def home_page(request):
+    if request.method == 'POST':
+        return HttpResponse(request.POST['item_text'])
+
+    return render(request, 'home.html')
+```
+
+We will also need to set the request method in the unit test as follows:
+
+```
+# lists/tests.py
+
+...
+def test_home_page_can_store_post_requests(self):
+      request = HttpRequest()
+      request.method = 'POST'
+      request.POST['item_text'] = 'new item'
+      response = home_page(request)
+      self.assertIn(
+          'new item',
+          response.content.decode('utf8')
+      )
+```
+
+If we run our unit tests again we get a passing test!
+
+```
+> python manage.py test lists
+Creating test database for alias 'default'...
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.005s
+
+OK
+Destroying test database for alias 'default'...
+```
+
+However if we run our functional tests we will see that the site takes our `POST` request text and returns it directly, replacing our UI with just the text we submitted. This is not what we want, instead we want the view function to put the `POST` request text into the table element.
+
+First we need to update our unit test t look for the new item inside the `<td>` element of a row.
+
+```
+# lists/tests.py
+
+...
+def test_home_page_can_store_post_requests(self):
+    request = HttpRequest()
+    request.method = 'POST'
+    request.POST['item_text'] = 'new item'
+    response = home_page(request)
+    self.assertIn(
+        '<td>new item</td>',
+        response.content.decode('utf8')
+    )
+```
+
+Second, we will need to update our `home.html` template to include a placeholder for inserting new list items in the table. This uses django template syntax for variables which will allow DJango to inject data into the template before returning it to the client for rendering.
+
+```
+# lists/templates/home.html
+
+...
+<table id="id_list_table">
+  <tr>
+    <td>{{ new_item_text }}</td>
+  </tr>
+</table>
+...
+```
+
+To make the template syntax variable work, we need to pass a dictionary into the view function (a `context dictionary` in this case) which maps some variable names (from the template) to some values (from the user or database, etc.). Let's update our `test_home_page_can_store_post_requests` unit test to reflect this:
+
+```
+# lists/tests.py
+
+...
+def test_home_page_can_store_post_requests(self):
+      request = HttpRequest()
+      request.method = 'POST'
+      request.POST['item_text'] = 'new item'
+      response = home_page(request)
+
+      expected_content = render_to_string(
+          'home.html',
+          {'new_item_text': 'new item'}
+      )
+
+      self.assertEqual(
+          response.content.decode('utf8'),
+          expected_content
+      )
+```
+
+If we run our unit tests again, we will see this error:
+
+```
+> python manage.py test
+Creating test database for alias 'default'...
+F.
+======================================================================
+FAIL: test_home_page_can_store_post_requests (lists.tests.HomePageViewTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/jgentle/Code/code_practices/python/TDD/django/superlists/lists/tests.py", line 44, in test_home_page_can_store_post_requests
+    expected_content
+AssertionError: 'new item' != '<html>\n<head>\n  <title>To-Do Lists</tit[373 chars]l>\n'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.007s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+```
+
+This is complaining because of our simlistic `home_page` view function. We need to setup a proper request method for handling the `POST` data.
+
+```
+# lists/views.py
+
+...
+def home_page(request):
+    if request.method == 'POST':
+        return render(request, 'home.html', {
+            'new_item_text': request.POST['item_text']
+        })
+
+    return render(request, 'home.html')
+```
+
+This code basically says if it is a POST request, find the users input, assign it to a new_item_text variable and inject it into the template.
+
+This iteration of the code has moved the applicatio forward from a todo list that can handle zero items, into a todo list tha can handle exactly one item - which is progress!
+
+Let's run our unit tests again to esnure they are passing:
+
+```
+> python manage.py test
+Creating test database for alias 'default'...
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.006s
+
+OK
+Destroying test database for alias 'default'...
+```
+
+Looking good! Now let's try the functional tests:
+
+```
+> python functional_tests.py
+F
+======================================================================
+FAIL: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 63, in test_home_page
+    [row.text for row in rows]
+AssertionError: '1: Buy peacock feathers' not found in ['Buy peacock feathers']
+
+----------------------------------------------------------------------
+Ran 1 test in 12.024s
+
+FAILED (failures=1)
+```
+
+Hmmm, if you looked at the browser while it was sleeping you will have seen that indeed, our POST request data was properly remdered in out template under the list table. Yet our functional tests are still failing. Why is this?
+
+Closer inspection shows that it is the `1:` prefix that is missing from our todo list item. We can hard code that into the POST value for the time being to pass the test.
+
+```
+# lists/templates/home.test_home_page_uses_home_template
+
+...
+<table id="id_list_table">
+  <tr>
+    <td>1: {{ new_item_text }}</td>
+  </tr>
+</table>
+...
+```
+
+Now run your functional tests again and...
+
+```
+python functional_tests.py
+F
+======================================================================
+FAIL: test_home_page (__main__.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "functional_tests.py", line 73, in test_home_page
+    self.fail('Finish writing the test! 2:21:46...')
+AssertionError: Finish writing the test! 2:21:46...
+
+----------------------------------------------------------------------
+Ran 1 test in 12.010s
+
+FAILED (failures=1)
+```
+
+SUCCESS! (of a kind). We are now passing the test for the list content and back to our self imposed test failure to remind us to keep testing.
+
+However, there is still a problem. A list is generally not a list without more than one item and if we were to write a second test that submitted a new POST value, we would see that the first POST value will have been removed and replaced by the new value instead of being appended to the list. This is becuse our list only handles one item currently. Now we want to extend it to hanlde n-items.

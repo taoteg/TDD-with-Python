@@ -10,10 +10,15 @@
 </head>
 <body>
   <h1>To-Do Lists Is Coming!</h1>
-  <input id="id_new_item" placeholder="Enter a to-do item" />
+
+  <form method="POST">
+    <input id="id_new_item" name="item_text" placeholder="Enter a to-do item" />
+    {% csrf_token %}
+  </form>
+
   <table id="id_list_table">
     <tr>
-      <td>stuff</td>
+      <td>1: {{ new_item_text }}</td>
     </tr>
   </table>
 </body>

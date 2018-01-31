@@ -1,4 +1,5 @@
 import unittest
+import time
 from selenium import webdriver
 
 class HomePageTest(unittest.TestCase):
@@ -41,6 +42,11 @@ class HomePageTest(unittest.TestCase):
         # The user types in their todo, presses enter, and the site refreshes.
         # The user should now see their todo in the list:
         # "1: Buy peacock feathers"
+
+        # We are unexpectedly failing here with our form element.
+        # Let's pause and inspect the browser during testing.
+        time.sleep(10)
+
         table = self.browser.find_element_by_id('id_list_table')
         rows = table.find_elements_by_tag_name('tr')
 
@@ -64,7 +70,7 @@ class HomePageTest(unittest.TestCase):
         # Etc.
 
         # Intentionally failing the test.
-        self.fail('Finish writing the test! 2:21:46...')
+        self.fail('Finish writing the test! Resume in the middle of Chapter 5 in book [https://www.obeythetestinggoat.com/pages/book.html#toc]')
 
 if __name__ == '__main__':
     # unittest.main()
