@@ -12,8 +12,8 @@ Also see:
 - [Working Effectively with Legacy Code (by Michael Feathers)](https://www.amazon.com/Working-Effectively-Legacy-Michael-Feathers/dp/0131177052)
 
 Other References:
-- [Selenium](http://www.seleniumhq.org/docs/03_webdriver.jsp#selenium-webdriver-api-commands-and-operations)
-- [Python unittest](https://docs.python.org/3.6/library/unittest.html)
+- [Selenium Docs: API](http://www.seleniumhq.org/docs/03_webdriver.jsp#selenium-webdriver-api-commands-and-operations)
+- [Python Docs: unittest](https://docs.python.org/3.6/library/unittest.html)
 
 
 #### Requirements:
